@@ -157,13 +157,14 @@ export default function ChatBot() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: 'url(/background.jpg)' }}
-    >
+    <div className="fixed inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/background.jpg)' }}
+      />
       {/* オーバーレイ */}
-      <div className="min-h-screen bg-black/40 backdrop-blur-sm">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl min-h-screen">
           {/* ヘッダー */}
           <div className="text-center mb-4 sm:mb-8">
             <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-4">

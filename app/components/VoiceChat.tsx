@@ -21,11 +21,6 @@ export default function VoiceChat() {
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [conversationHistory, setConversationHistory] = useState<Array<{
-    type: 'user' | 'ai';
-    text: string;
-    timestamp: Date;
-  }>>([]);
 
   // インタラプト用のリファレンス
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -84,13 +79,12 @@ export default function VoiceChat() {
     }
   );
 
-  // コンポーネントマウント時に自動的にリスニング開始
+  // クリーンアップ（コンポーネントアンマウント時）
   useEffect(() => {
-    startListening();
     return () => {
       stopListening();
     };
-  }, [startListening, stopListening]);
+  }, [stopListening]);
 
   const processAudio = async () => {
     if (isProcessingRef.current) {
@@ -170,14 +164,8 @@ export default function VoiceChat() {
         console.log(`STT遅延: ${sttLatency.toFixed(0)}ms`);
         setTranscript(currentTranscript);
 
-        // ユーザーメッセージを会話履歴に保存
+        // ユーザーメッセージを会話履歴に保存（内部保存のみ）
         addMessageToHistory('user', currentTranscript);
-
-        // 会話履歴に追加（UI表示用）
-        setConversationHistory((prev) => [
-          ...prev,
-          { type: 'user', text: currentTranscript, timestamp: new Date() },
-        ]);
       } else {
         return; // audioBlobがない場合は処理を終了
       }
@@ -259,13 +247,9 @@ export default function VoiceChat() {
                 setIsProcessing(false);
                 isProcessingRef.current = false;
 
-                // AI応答を会話履歴に保存
+                // AI応答を会話履歴に保存（内部保存のみ）
                 if (fullResponse) {
                   addMessageToHistory('assistant', fullResponse);
-                  setConversationHistory((prev) => [
-                    ...prev,
-                    { type: 'ai', text: fullResponse, timestamp: new Date() },
-                  ]);
                 }
 
                 // TTSで音声再生
@@ -350,12 +334,9 @@ export default function VoiceChat() {
       <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
       
       <div className="max-w-4xl mx-auto relative z-10">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          Frequently - ハンズフリーモード
+        <h1 className="text-3xl font-bold text-white mb-6 text-center">
+          Frequently
         </h1>
-        <p className="text-gray-600 dark:text-gray-300 mb-8">
-          ボタンを押さずに、自然に話しかけてください
-        </p>
 
         {/* エラー表示 */}
         {(error || recorderError || playerError || vadError) && (
@@ -374,149 +355,53 @@ export default function VoiceChat() {
           </div>
         )}
 
-        {/* ステータス表示 */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-center gap-6">
-            {/* リスニング状態 */}
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                  isListening
-                    ? 'bg-green-500 animate-pulse'
-                    : 'bg-gray-400'
-                }`}
-              >
-                <span className="text-2xl">🎤</span>
-              </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {isListening ? 'リスニング中' : '停止中'}
-              </p>
-            </div>
-
-            {/* 発話状態 */}
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                  isSpeaking
-                    ? 'bg-blue-500 animate-pulse'
-                    : isRecording
-                    ? 'bg-red-500 animate-pulse'
-                    : 'bg-gray-300'
-                }`}
-              >
-                <span className="text-2xl">
-                  {isSpeaking ? '🗣️' : isRecording ? '●' : '👤'}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {isSpeaking
-                  ? '発話中'
-                  : isRecording
-                  ? '録音中'
-                  : '待機中'}
-              </p>
-            </div>
-
-            {/* AI応答状態 */}
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                  isPlaying
-                    ? 'bg-purple-500 animate-pulse'
-                    : isProcessing
-                    ? 'bg-yellow-500 animate-pulse'
-                    : 'bg-gray-300'
-                }`}
-              >
-                <span className="text-2xl">
-                  {isPlaying ? '🔊' : isProcessing ? '🤔' : '🤖'}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {isPlaying
-                  ? 'AI応答中'
-                  : isProcessing
-                  ? '処理中'
-                  : '待機中'}
-              </p>
-            </div>
-          </div>
-
-          {/* 操作説明 */}
-          <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>💡 話しかけるだけで自動的に会話が始まります</p>
-            <p className="mt-1">💡 AIが話している最中に話し始めると、AIが停止します（インタラプト）</p>
-            <p className="mt-1">💡 会話履歴は自動的に保存され、AIが文脈を理解します</p>
-          </div>
-
-          {/* 会話履歴クリアボタン */}
-          <div className="mt-4 text-center">
+        {/* コントロールボタン */}
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6 text-center">
+          {!isListening ? (
+            <button
+              onClick={async () => {
+                setError(null);
+                await startListening();
+              }}
+              disabled={!!(error || recorderError || playerError || vadError)}
+              className="px-12 py-6 rounded-full text-white font-semibold text-xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              🎤 会話を開始
+            </button>
+          ) : (
             <button
               onClick={() => {
-                if (confirm('会話履歴をクリアしますか？')) {
-                  clearConversationHistory();
-                  setConversationHistory([]);
-                  setTranscript('');
-                  setResponse('');
+                stopListening();
+                stopAudio();
+                if (abortControllerRef.current) {
+                  abortControllerRef.current.abort();
                 }
+                setIsProcessing(false);
+                isProcessingRef.current = false;
               }}
-              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              className="px-12 py-6 rounded-full text-white font-semibold text-xl transition-all bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              🗑️ 会話履歴をクリア
+              ⏹️ 停止
             </button>
-          </div>
+          )}
+          
+          {isListening && (
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+              {isSpeaking ? '🗣️ 発話中' : isRecording ? '● 録音中' : isProcessing ? '🤔 処理中' : isPlaying ? '🔊 AI応答中' : '🎤 リスニング中'}
+            </p>
+          )}
         </div>
 
-        {/* 会話履歴 */}
-        {conversationHistory.length > 0 && (
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6 max-h-96 overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              会話履歴
-            </h2>
-            <div className="space-y-4">
-              {conversationHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    item.type === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      item.type === 'user'
-                        ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                    }`}
-                  >
-                    <p className="text-sm font-semibold mb-1">
-                      {item.type === 'user' ? 'あなた' : 'AI'}
-                    </p>
-                    <p className="whitespace-pre-wrap">{item.text}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {item.timestamp.toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* 現在の転写と応答 */}
+        {/* 会話表示 */}
         {transcript && (
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              あなたの発話
-            </h2>
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-4">
             <p className="text-gray-800 dark:text-gray-200">{transcript}</p>
           </div>
         )}
 
         {response && (
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              AI応答
-            </h2>
             <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
               {response}
               {isProcessing && (
@@ -525,17 +410,6 @@ export default function VoiceChat() {
             </p>
           </div>
         )}
-
-        {/* ステータス情報 */}
-        <div className="mt-6 text-sm text-gray-500 dark:text-gray-400 text-center space-y-1">
-          <p>✅ 音声認識（STT）: Deepgram Nova-2 - 動作中</p>
-          <p>✅ LLM（Groq）: Llama 3.1 - 動作中</p>
-          <p>✅ 音声合成（TTS）: ElevenLabs Turbo - 動作中</p>
-          <p>✅ VAD: 音量ベース - 動作中</p>
-          <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-            ハンズフリーモードで動作中。話しかけるだけで会話が始まります。
-          </p>
-        </div>
       </div>
     </div>
   );

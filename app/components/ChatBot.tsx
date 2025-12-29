@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  addMessageToHistory,
-  getRecentMessages,
-  clearConversationHistory,
-} from '../lib/conversation';
+// localStorageは使用しない（リフレッシュで消えるように）
 
 interface Message {
   role: 'user' | 'assistant';
@@ -20,19 +16,7 @@ export default function ChatBot() {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 会話履歴を読み込む
-  useEffect(() => {
-    const history = getRecentMessages(50);
-    if (history.length > 0) {
-      setMessages(
-        history.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: new Date(),
-        }))
-      );
-    }
-  }, []);
+  // 会話履歴は読み込まない（リフレッシュで消えるように）
 
   // メッセージが更新されたらスクロール
   useEffect(() => {
@@ -49,16 +33,15 @@ export default function ChatBot() {
       timestamp: new Date(),
     };
 
-    // ユーザーメッセージを追加
+    // ユーザーメッセージを追加（localStorageには保存しない）
     setMessages((prev) => [...prev, userMessage]);
-    addMessageToHistory('user', input.trim());
     setInput('');
     setIsStreaming(true);
     setError(null);
 
     try {
-      // 最新の会話履歴を取得
-      const conversationHistory = getRecentMessages(10).map((msg) => ({
+      // 最新の会話履歴を取得（メモリ内のメッセージから）
+      const conversationHistory = messages.slice(-10).map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
@@ -107,10 +90,7 @@ export default function ChatBot() {
             const data = line.slice(6);
             if (data === '[DONE]') {
               setIsStreaming(false);
-              // 会話履歴に保存
-              if (fullResponse) {
-                addMessageToHistory('assistant', fullResponse);
-              }
+              // localStorageには保存しない（リフレッシュで消えるように）
               return;
             }
 
@@ -144,10 +124,7 @@ export default function ChatBot() {
                   return newMessages;
                 });
                 setIsStreaming(false);
-                // 会話履歴に保存
-                if (fullResponse) {
-                  addMessageToHistory('assistant', fullResponse);
-                }
+                // localStorageには保存しない（リフレッシュで消えるように）
               }
             } catch (parseError) {
               console.error('JSON解析エラー:', parseError);
@@ -163,7 +140,6 @@ export default function ChatBot() {
 
   const handleClear = () => {
     if (confirm('会話履歴をクリアしますか？')) {
-      clearConversationHistory();
       setMessages([]);
       setError(null);
     }

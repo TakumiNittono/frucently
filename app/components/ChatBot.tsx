@@ -157,23 +157,15 @@ export default function ChatBot() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/background.jpg)' }}
-      />
+    <div className="fixed inset-0 overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800">
       {/* オーバーレイ */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto">
+      <div className="absolute inset-0 overflow-y-auto">
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl min-h-screen">
           {/* ヘッダー */}
           <div className="text-center mb-4 sm:mb-8">
             <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-4">
-              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg overflow-hidden ring-2 sm:ring-4 ring-white/50">
-                <img
-                  src="/background.jpg"
-                  alt="AI Icon"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg ring-2 sm:ring-4 ring-indigo-400/50">
+                <span className="text-white text-xl sm:text-3xl font-bold">F</span>
               </div>
               <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-lg">Frequently</h1>
             </div>

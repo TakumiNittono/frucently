@@ -154,9 +154,11 @@ export default function VoiceChat() {
 
         currentTranscript = sttData.transcript || '';
 
-        if (!currentTranscript) {
+        if (!currentTranscript || currentTranscript.trim().length === 0) {
           console.warn('転写結果が空です:', sttData);
-          throw new Error(sttData.error || '音声からテキストを認識できませんでした。もう一度、はっきりと話してみてください。');
+          // 空の転写結果の場合はエラーを出さず、次の発話を待つ
+          console.log('転写結果が空のため、次の発話を待機します');
+          return;
         }
 
         console.log('転写成功:', currentTranscript);
@@ -174,8 +176,14 @@ export default function VoiceChat() {
         throw new Error('転写テキストが取得できませんでした');
       }
 
-      // 最新の会話履歴を取得
-      const conversationHistory = getRecentMessages(10);
+      // 最新の会話履歴を取得（timestampを除外して送信）
+      const conversationHistory = getRecentMessages(10).map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      console.log('会話履歴を送信:', conversationHistory);
+      console.log('転写テキスト:', currentTranscript);
 
       // LLM APIに送信（会話履歴を含める）
       performanceMonitor.startTimer('llm');
@@ -253,9 +261,12 @@ export default function VoiceChat() {
                 }
 
                 // TTSで音声再生
-                if (parsed.text) {
-                  await playTTS(parsed.text);
+                if (parsed.text || fullResponse) {
+                  await playTTS(parsed.text || fullResponse);
                 }
+
+                // 会話を続けるために、リスニングを再開（TTS再生後）
+                // playTTS内で自動的にリスニングが再開される
               }
             } catch (parseError) {
               console.error('JSON解析エラー:', parseError);
@@ -313,6 +324,18 @@ export default function VoiceChat() {
       const endToEndLatency = performanceMonitor.endTimer('endToEnd');
       console.log(`エンドツーエンド遅延: ${endToEndLatency.toFixed(0)}ms`);
       performanceMonitor.logMetrics();
+
+      // 会話を続けるために、リスニングを再開（TTS再生完了後）
+      // ただし、リスニングが停止されていない場合のみ
+      if (isListening) {
+        console.log('TTS再生完了。次の発話を待機中...');
+      }
+
+      // 会話を続けるために、リスニングを再開（TTS再生完了後）
+      // ただし、リスニングが停止されていない場合のみ
+      if (isListening) {
+        console.log('TTS再生完了。次の発話を待機中...');
+      }
     } catch (err) {
       console.error('TTS再生エラー:', err);
       // TTSエラーは警告のみ（テキスト表示は継続）

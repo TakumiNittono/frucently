@@ -42,14 +42,16 @@ export async function POST(request: NextRequest) {
     if (conversationHistory && Array.isArray(conversationHistory)) {
       // 最新10件の会話履歴をメッセージに追加
       const recentHistory = conversationHistory.slice(-10);
+      console.log('受信した会話履歴:', recentHistory);
       for (const msg of recentHistory) {
         if (msg.role === 'user' || msg.role === 'assistant') {
           messages.push({
             role: msg.role,
-            content: msg.content,
+            content: msg.content || msg.text || '',
           });
         }
       }
+      console.log('構築したメッセージ:', messages);
     }
 
     // 現在のユーザーメッセージを追加

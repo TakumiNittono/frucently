@@ -168,7 +168,7 @@ export default function ChatBot() {
                 <img
                   src="/background.jpg"
                   alt="AI Icon"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center object-[center_60%]"
                 />
               </div>
               <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-lg">Frequently</h1>

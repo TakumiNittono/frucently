@@ -163,46 +163,46 @@ export default function ChatBot() {
     >
       {/* オーバーレイ */}
       <div className="min-h-screen bg-black/40 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
           {/* ヘッダー */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg overflow-hidden ring-4 ring-white/50">
+          <div className="text-center mb-4 sm:mb-8">
+            <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-4">
+              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg overflow-hidden ring-2 sm:ring-4 ring-white/50">
                 <img
                   src="/background.jpg"
                   alt="AI Icon"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h1 className="text-4xl font-bold text-white drop-shadow-lg">Frequently</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-lg">Frequently</h1>
             </div>
-            <p className="text-white/90 text-sm drop-shadow">チャットボット</p>
+            <p className="text-white/90 text-xs sm:text-sm drop-shadow">チャットボット</p>
           </div>
 
           {/* エラー表示 */}
           {error && (
-            <div className="bg-red-50/90 dark:bg-red-900/80 backdrop-blur-sm border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+            <div className="bg-red-50/90 dark:bg-red-900/80 backdrop-blur-sm border border-red-200 dark:border-red-800 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <span className="text-xl sm:text-2xl">⚠️</span>
                 <div className="flex-1">
-                  <p className="text-red-800 dark:text-red-300 font-semibold mb-2">
+                  <p className="text-red-800 dark:text-red-300 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">
                     エラーが発生しました
                   </p>
-                  <p className="text-red-700 dark:text-red-400">{error}</p>
+                  <p className="text-red-700 dark:text-red-400 text-xs sm:text-sm break-words">{error}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* チャット履歴 */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6 max-h-[60vh] overflow-y-auto">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-3 sm:p-6 mb-4 sm:mb-6 max-h-[calc(100vh-280px)] sm:max-h-[60vh] overflow-y-auto">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-12">
-                <p className="text-lg mb-2">👋 こんにちは！</p>
-                <p>メッセージを入力して会話を始めましょう</p>
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8 sm:py-12">
+                <p className="text-base sm:text-lg mb-2">👋 こんにちは！</p>
+                <p className="text-sm sm:text-base">メッセージを入力して会話を始めましょう</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {messages.map((message, index) => (
                   <div
                     key={index}
@@ -211,13 +211,13 @@ export default function ChatBot() {
                     }`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg p-4 ${
+                      className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-3 sm:p-4 ${
                         message.role === 'user'
                           ? 'bg-indigo-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <p className="whitespace-pre-wrap text-sm sm:text-base break-words">{message.content}</p>
                       {isStreaming && index === messages.length - 1 && (
                         <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
                       )}
@@ -230,7 +230,7 @@ export default function ChatBot() {
           </div>
 
           {/* 入力フォーム */}
-          <form onSubmit={handleSubmit} className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
+          <form onSubmit={handleSubmit} className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-3 sm:p-4">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -238,12 +238,12 @@ export default function ChatBot() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="メッセージを入力..."
                 disabled={isStreaming}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 text-sm sm:text-base"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isStreaming}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold text-sm sm:text-base whitespace-nowrap"
               >
                 {isStreaming ? '送信中...' : '送信'}
               </button>
@@ -251,7 +251,7 @@ export default function ChatBot() {
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-lg sm:text-xl"
                 >
                   🗑️
                 </button>

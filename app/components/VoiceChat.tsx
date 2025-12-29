@@ -26,9 +26,12 @@ export default function VoiceChat() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isProcessingRef = useRef(false);
 
-  // VADコールバック
+  // 手動録音状態
+  const [isManualRecording, setIsManualRecording] = useState(false);
+
+  // VADコールバック（インタラプト機能のみ）
   const handleSpeechStart = () => {
-    console.log('発話開始を検知');
+    console.log('発話開始を検知（インタラプト用）');
     
     // AIが話している最中にユーザーが話し始めたら、AIを停止（インタラプト）
     if (isPlaying || isProcessingRef.current) {
@@ -47,35 +50,21 @@ export default function VoiceChat() {
         console.log(`インタラプト遅延: ${interruptLatency.toFixed(0)}ms`);
       }, 10);
     }
-
-    // 録音開始
-    if (!isRecording) {
-      startRecording();
-    }
   };
 
   const handleSpeechEnd = async () => {
-    console.log('発話終了を検知');
-    
-    // 録音停止
-    if (isRecording) {
-      stopRecording();
-      
-      // 録音が完了するまで少し待つ
-      setTimeout(async () => {
-        await processAudio();
-      }, 300);
-    }
+    // 手動録音モードではVADの自動処理は無効
+    console.log('発話終了を検知（インタラプト用のみ）');
   };
 
-  // VADフック
+  // VADフック（インタラプト機能のみに使用）
   const { isListening, isSpeaking, startListening, stopListening, error: vadError } = useVAD(
     handleSpeechStart,
     handleSpeechEnd,
     {
       silenceThreshold: 0.01,
-      silenceDuration: 500, // 500msの沈黙で発話終了
-      speechThreshold: 0.02, // 音量が2%を超えたら発話開始
+      silenceDuration: 500,
+      speechThreshold: 0.02,
     }
   );
 
@@ -325,17 +314,8 @@ export default function VoiceChat() {
       console.log(`エンドツーエンド遅延: ${endToEndLatency.toFixed(0)}ms`);
       performanceMonitor.logMetrics();
 
-      // 会話を続けるために、リスニングを再開（TTS再生完了後）
-      // ただし、リスニングが停止されていない場合のみ
-      if (isListening) {
-        console.log('TTS再生完了。次の発話を待機中...');
-      }
-
-      // 会話を続けるために、リスニングを再開（TTS再生完了後）
-      // ただし、リスニングが停止されていない場合のみ
-      if (isListening) {
-        console.log('TTS再生完了。次の発話を待機中...');
-      }
+      // TTS再生完了
+      console.log('TTS再生完了。次の「聞き取り開始」ボタンを押してください。');
     } catch (err) {
       console.error('TTS再生エラー:', err);
       // TTSエラーは警告のみ（テキスト表示は継続）
@@ -380,37 +360,61 @@ export default function VoiceChat() {
 
         {/* コントロールボタン */}
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6 text-center">
-          {!isListening ? (
+          {!isManualRecording ? (
             <button
               onClick={async () => {
                 setError(null);
+                setTranscript('');
+                setResponse('');
+                // 録音開始
+                startRecording();
+                setIsManualRecording(true);
+                // インタラプト機能のためにVADも開始
                 await startListening();
+                console.log('録音開始（手動モード）');
               }}
-              disabled={!!(error || recorderError || playerError || vadError)}
+              disabled={!!(error || recorderError || playerError || vadError) || isProcessing || isPlaying}
               className="px-12 py-6 rounded-full text-white font-semibold text-xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              🎤 会話を開始
+              🎤 聞き取り開始
             </button>
           ) : (
             <button
-              onClick={() => {
+              onClick={async () => {
+                console.log('停止ボタンが押されました');
+                // 録音停止
+                stopRecording();
+                setIsManualRecording(false);
                 stopListening();
-                stopAudio();
-                if (abortControllerRef.current) {
-                  abortControllerRef.current.abort();
-                }
-                setIsProcessing(false);
-                isProcessingRef.current = false;
+                
+                // 録音が完了するまで少し待つ
+                setTimeout(async () => {
+                  console.log('録音停止。処理を開始します');
+                  await processAudio();
+                }, 300);
               }}
-              className="px-12 py-6 rounded-full text-white font-semibold text-xl transition-all bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transform hover:scale-105"
+              disabled={isProcessing}
+              className="px-12 py-6 rounded-full text-white font-semibold text-xl transition-all bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              ⏹️ 停止
+              ⏹️ 停止（AIのターン）
             </button>
           )}
           
-          {isListening && (
+          {isManualRecording && (
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {isSpeaking ? '🗣️ 発話中' : isRecording ? '● 録音中' : isProcessing ? '🤔 処理中' : isPlaying ? '🔊 AI応答中' : '🎤 リスニング中'}
+              {isRecording ? '● 録音中 - 停止ボタンを押すとAIのターンになります' : '🎤 準備中...'}
+            </p>
+          )}
+          
+          {isProcessing && (
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+              🤔 AIが考えています...
+            </p>
+          )}
+          
+          {isPlaying && (
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+              🔊 AIが話しています
             </p>
           )}
         </div>

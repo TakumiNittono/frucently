@@ -239,7 +239,8 @@ export default function ChatBot() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="メッセージを入力..."
                 disabled={isStreaming}
-                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 text-sm sm:text-base"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 text-base"
+                style={{ fontSize: '16px' }}
               />
               <button
                 type="submit"

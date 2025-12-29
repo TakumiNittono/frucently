@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import Groq from 'groq-sdk';
+import { injectConversationHistory } from '@/app/lib/conversation';
+import { retryWithBackoff } from '@/app/lib/retry';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -8,7 +10,7 @@ const groq = new Groq({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { transcript } = body;
+    const { transcript, conversationHistory } = body;
 
     if (!transcript) {
       return new Response(
@@ -16,9 +18,6 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
-
-    // TODO: DeepgramでSTT処理
-    // 現在はテキスト入力として処理（後で実装）
 
     // GroqでLLM処理
     if (!process.env.GROQ_API_KEY) {
@@ -28,23 +27,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content:
-            'あなたは親しみやすい日本語AIアシスタントです。自然で丁寧な日本語で会話してください。',
-        },
-        {
-          role: 'user',
-          content: transcript,
-        },
-      ],
-      model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
-      stream: true,
-      temperature: 0.7,
-      max_tokens: 512,
+    // 会話履歴をプロンプトに注入
+    const systemPrompt = 'あなたは親しみやすい日本語AIアシスタントです。自然で丁寧な日本語で会話してください。過去の会話の文脈を理解して、自然な会話を続けてください。';
+    
+    // クライアントから送られてきた会話履歴を使用（なければ空）
+    let messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      {
+        role: 'system',
+        content: systemPrompt,
+      },
+    ];
+
+    // 会話履歴がある場合、それをメッセージに追加
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      // 最新10件の会話履歴をメッセージに追加
+      const recentHistory = conversationHistory.slice(-10);
+      for (const msg of recentHistory) {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({
+            role: msg.role,
+            content: msg.content,
+          });
+        }
+      }
+    }
+
+    // 現在のユーザーメッセージを追加
+    messages.push({
+      role: 'user',
+      content: transcript,
     });
+
+    // Groq API呼び出しをリトライ可能にする
+    const completion = await retryWithBackoff(
+      () =>
+        groq.chat.completions.create({
+          messages: messages as any,
+          model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 512,
+        }),
+      {
+        maxRetries: 2,
+        initialDelay: 1000,
+      }
+    );
 
     // ストリーミングレスポンスを作成
     const stream = new ReadableStream({

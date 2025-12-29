@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@deepgram/sdk';
+import { retryWithBackoff } from '@/app/lib/retry';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,14 +48,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Deepgramで音声認識
-    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-      buffer,
+    // Deepgramで音声認識（リトライ可能）
+    const { result, error } = await retryWithBackoff(
+      () =>
+        deepgram.listen.prerecorded.transcribeFile(buffer, {
+          model: 'nova-2',
+          language: 'ja',
+          punctuate: true,
+          interim_results: false,
+        }),
       {
-        model: 'nova-2',
-        language: 'ja',
-        punctuate: true,
-        interim_results: false,
+        maxRetries: 2,
+        initialDelay: 1000,
       }
     );
 

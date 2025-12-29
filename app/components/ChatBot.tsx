@@ -18,6 +18,17 @@ export default function ChatBot() {
 
   // 会話履歴は読み込まない（リフレッシュで消えるように）
 
+  // 初回マウント時にAIから最初のメッセージを送信
+  useEffect(() => {
+    const initialMessage: Message = {
+      role: 'assistant',
+      content: 'お前やる気あんの？',
+      timestamp: new Date(),
+    };
+    setMessages([initialMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // メッセージが更新されたらスクロール
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

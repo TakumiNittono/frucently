@@ -1,6 +1,6 @@
-import VoiceChat from './components/VoiceChat';
+import ChatBot from './components/ChatBot';
 
 export default function Home() {
-  return <VoiceChat />;
+  return <ChatBot />;
 }
 
